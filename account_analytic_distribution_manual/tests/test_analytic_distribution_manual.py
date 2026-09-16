@@ -124,3 +124,45 @@ class TestAnalyticDistributionManual(DistributionManualCommon):
         self.assertEqual(
             self.distribution_1.analytic_distribution, {str(aa_1.id): 40.0}
         )
+
+    def test_manual_distribution_analytic_distribution_multi_plan(self):
+        plan_b = self.env["account.analytic.plan"].create({"name": "Plan B"})
+        aa_1 = self.analytic_account_a1
+        aa_b1 = self.env["account.analytic.account"].create(
+            {"name": "analytic_account_b1", "plan_id": plan_b.id}
+        )
+        # A key holds one analytic account per plan, their ids joined by a comma
+        self.distribution_1.analytic_distribution = {f"{aa_1.id},{aa_b1.id}": 100.0}
+        self.assertEqual(
+            self.distribution_1.analytic_distribution_import,
+            {f"{aa_1.name},{aa_b1.name}": 100.0},
+        )
+        # Set the same distribution back from the account names
+        self.distribution_1.analytic_distribution_import = {
+            f"{aa_1.name},{aa_b1.name}": 100.0
+        }
+        self.assertEqual(
+            self.distribution_1.analytic_distribution,
+            {f"{aa_1.id},{aa_b1.id}": 100.0},
+        )
+        # An unknown name in the key discards the whole key
+        self.distribution_1.analytic_distribution_import = {
+            f"{aa_1.name},analytic_account_b2": 100.0
+        }
+        self.assertFalse(self.distribution_1.analytic_distribution)
+
+    def test_manual_distribution_analytic_distribution_name_with_separator(self):
+        aa_1 = self.analytic_account_a1
+        aa_1.name = "analytic,account"
+        self.distribution_1.analytic_distribution_import = {aa_1.name: 100.0}
+        self.assertEqual(
+            self.distribution_1.analytic_distribution, {str(aa_1.id): 100.0}
+        )
+
+    def test_manual_distribution_analytic_distribution_deleted_account(self):
+        aa_2 = self.analytic_account_a2
+        self.analytic_account_a1.unlink()
+        self.distribution_1.invalidate_recordset(["analytic_distribution_import"])
+        self.assertEqual(
+            self.distribution_1.analytic_distribution_import, {aa_2.name: 60}
+        )

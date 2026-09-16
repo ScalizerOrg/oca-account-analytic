@@ -2,3 +2,5 @@
   - Carlos Lopez
 - APSL - Nagarro \<<https://apsl.tech>\>
   - Bernat Obrador
+- Scalizer (<https://www.scalizer.fr>):
+  - Morgane Goujon
